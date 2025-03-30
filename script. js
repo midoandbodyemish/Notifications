@@ -1,0 +1,46 @@
+const updatesUrl = "https://yourusername.github.io/your-repo/updates.json"; // رابط ملف التحديثات
+
+// تحقق من دعم الإشعارات
+if ("Notification" in window && "serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js").then(reg => {
+        console.log("✅ Service Worker مسجل:", reg);
+    }).catch(err => console.error("❌ فشل تسجيل Service Worker:", err));
+
+    document.getElementById("notifyBtn").addEventListener("click", () => {
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                checkForUpdates();
+            } else {
+                alert("يجب السماح بالإشعارات لتلقي التحديثات.");
+            }
+        });
+    });
+
+    function checkForUpdates() {
+        fetch(updatesUrl)
+            .then(response => response.json())
+            .then(data => {
+                if (data.updates.length === 0) return;
+
+                let lastUpdateId = localStorage.getItem("lastUpdateId");
+                let newUpdate = data.updates[0]; // أحدث تحديث
+
+                if (!lastUpdateId || newUpdate.id > lastUpdateId) {
+                    showNotification(newUpdate);
+                    localStorage.setItem("lastUpdateId", newUpdate.id);
+                }
+            })
+            .catch(error => console.error("⚠️ خطأ في تحميل التحديثات:", error));
+    }
+
+    function showNotification(update) {
+        navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification(update.title, {
+                body: update.message,
+                icon: "https://k.top4top.io/p_3169bgwkb0.jpg", // أيقونة الإشعار
+            });
+        });
+    }
+
+    checkForUpdates();
+}
