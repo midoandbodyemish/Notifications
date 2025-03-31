@@ -4,66 +4,72 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إشعارات Firebase</title>
-
-    <!-- تحميل مكتبة Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-messaging.js"></script>
-
+    <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-messaging.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js"></script>
 </head>
 <body>
 
-    <h1>مرحبًا، اختبر إشعارات فايربيس!</h1>
-    <button id="enableNotifications">🔔 تفعيل الإشعارات</button>
+    <h1>إشعارات Firebase</h1>
+    <button id="subscribeBtn">✅ الاشتراك في الإشعارات</button>
+    <button id="unsubscribeBtn">❌ إلغاء الاشتراك</button>
+    <p>عدد المشتركين: <span id="subscriberCount">0</span></p>
 
     <script>
-        // ✅ إعداد Firebase
+        // 1️⃣ - تهيئة Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAJzK9G2MJieXHmeeHUBdULdDt8NwyxyKQ",
             authDomain: "khedma-fd534.firebaseapp.com",
             projectId: "khedma-fd534",
             storageBucket: "khedma-fd534.firebasestorage.app",
             messagingSenderId: "186556101962",
-            appId: "1:186556101962:web:3edb278b50948378f83db3",
-            measurementId: "G-F6C0180ZDS"
+            appId: "1:186556101962:web:de1945009a23d99cf83db3",
+            measurementId: "G-JNTZRQ2W4S"
         };
 
+        // 2️⃣ - تهيئة التطبيق
         firebase.initializeApp(firebaseConfig);
         const messaging = firebase.messaging();
+        const db = firebase.firestore();
 
-        // ✅ تسجيل Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/firebase-messaging-sw.js')
-                .then((registration) => {
-                    console.log('✅ Service Worker مسجل بنجاح:', registration);
-                    messaging.useServiceWorker(registration);
-                })
-                .catch((error) => {
-                    console.log('❌ فشل تسجيل Service Worker:', error);
-                });
+        // 3️⃣ - تحديث عداد المشتركين
+        function updateSubscriberCount() {
+            db.collection("subscribers").get().then(snapshot => {
+                document.getElementById("subscriberCount").innerText = snapshot.size;
+            });
         }
+        updateSubscriberCount();
 
-        // ✅ تفعيل الإشعارات
-        document.getElementById('enableNotifications').addEventListener('click', () => {
-            Notification.requestPermission().then((permission) => {
-                if (permission === 'granted') {
-                    console.log('🔔 تم تفعيل الإشعارات!');
-                    messaging.getToken().then((token) => {
-                        console.log('🔑 رمز المستخدم:', token);
-                    }).catch((error) => {
-                        console.log('❌ خطأ في جلب الرمز:', error);
+        // 4️⃣ - زر الاشتراك
+        document.getElementById("subscribeBtn").addEventListener("click", () => {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    messaging.getToken({ vapidKey: "YOUR_VAPID_KEY" }).then(token => {
+                        db.collection("subscribers").doc(token).set({ subscribed: true }).then(() => {
+                            alert("✅ تم الاشتراك في الإشعارات!");
+                            updateSubscriberCount();
+                        });
                     });
-                } else {
-                    console.log('🚫 تم رفض الإشعارات');
                 }
             });
         });
 
-        // ✅ استقبال الإشعارات عند تشغيل الموقع
-        messaging.onMessage((payload) => {
-            console.log('📩 إشعار مستلم:', payload);
-            alert(`📢 إشعار جديد: ${payload.notification.title}\n${payload.notification.body}`);
+        // 5️⃣ - زر إلغاء الاشتراك
+        document.getElementById("unsubscribeBtn").addEventListener("click", () => {
+            messaging.getToken().then(token => {
+                db.collection("subscribers").doc(token).delete().then(() => {
+                    alert("❌ تم إلغاء الاشتراك!");
+                    updateSubscriberCount();
+                });
+            });
         });
 
+        // 6️⃣ - تسجيل الـ Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                .then(registration => console.log('✅ Service Worker مسجل بنجاح:', registration))
+                .catch(error => console.log('❌ فشل تسجيل Service Worker:', error));
+        }
     </script>
 
 </body>
