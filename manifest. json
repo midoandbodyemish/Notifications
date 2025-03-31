@@ -1,20 +1,16 @@
 {
-  "name": "تطبيق الإشعارات",
-  "short_name": "الإشعارات",
-  "start_url": "/index.html",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#007bff",
+  "name": "My Website",
+  "short_name": "MySite",
   "icons": [
     {
-      "src": "https://k.top4top.io/p_3169bgwkb0.jpg",
+      "src": "icon.png",
       "sizes": "192x192",
       "type": "image/png"
-    },
-    {
-      "src": "https://k.top4top.io/p_3169bgwkb0.jpg",
-      "sizes": "512x512",
-      "type": "image/png"
     }
-  ]
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "gcm_sender_id": "186556101962"
 }
