@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
+<style>
+    button {
+        padding: 10px 20px;
+        font-size: 18px;
+        margin: 10px;
+        cursor: pointer;
+    }
+</style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إشعارات Firebase</title>
