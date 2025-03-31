@@ -1,10 +1,10 @@
-{
-    "updates": [
-        {
-            "id": 1,
-            "title": "📢 تحديث جديد!",
-            "message": "تم إضافة ميزة الإشعارات في موقعنا 🚀",
-            "date": "2025-03-30"
-        }
-    ]
-}
+self.addEventListener('push', function(event) {
+    const options = {
+        body: '📢 إشعار جديد! تم إضافة ميزة جديدة 🎉',
+        icon: 'icon.png',
+        badge: 'icon.png'
+    };
+    event.waitUntil(
+        self.registration.showNotification('إشعار من موقعك', options)
+    );
+});
