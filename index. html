@@ -2,68 +2,20 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>تطبيق الإشعارات</title>
-    
-    <!-- ربط Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <link rel="manifest" href="https://yourusername.github.io/your-repo/manifest.json">
-
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            text-align: center;
-            background-color: #f8f9fa;
-        }
-        .container {
-            margin-top: 50px;
-        }
-        .notify-btn {
-            font-size: 1.3rem;
-            padding: 12px 25px;
-            margin-top: 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .notify-btn:hover {
-            background-color: #0056b3;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إشعارات FCM</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js"></script>
 </head>
 <body>
-
     <div class="container">
-        <h1 class="title">🔔 إشعارات الموقع</h1>
-        <p>اضغط على الزر أدناه لتفعيل الإشعارات.</p>
-        <button id="notifyBtn" class="notify-btn">تفعيل الإشعارات</button>
+        <h1>إشعارات FCM في موقعك</h1>
+        <button id="notifyBtn">تفعيل الإشعارات</button>
+        <p id="message"></p>
     </div>
-
-    <!-- ربط Bootstrap & FontAwesome للأيقونات -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
-
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js')
-            .then(() => console.log("✅ Service Worker Registered"))
-            .catch(error => console.log("❌ Service Worker Error:", error));
-        }
-
-        document.getElementById("notifyBtn").addEventListener("click", () => {
-            Notification.requestPermission().then(permission => {
-                if (permission === "granted") {
-                    new Notification("📢 تم تفعيل الإشعارات!", {
-                        body: "ستتلقى إشعارات عند إضافة ميزات جديدة.",
-                        icon: "https://k.top4top.io/p_3169bgwkb0.jpg"
-                    });
-                }
-            });
-        });
-    </script>
-
+    
+    <script src="firebase-config.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>
