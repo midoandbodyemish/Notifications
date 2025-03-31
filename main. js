@@ -1,0 +1,22 @@
+document.getElementById("notifyBtn").addEventListener("click", () => {
+    Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+            messaging.getToken({ vapidKey: "ضع-مفتاح-VAPID-هنا" }).then((token) => {
+                console.log("🔑 توكن المستخدم:", token);
+                document.getElementById("message").innerText = "تم تفعيل الإشعارات ✅";
+            }).catch((err) => {
+                console.error("❌ خطأ في الحصول على التوكن:", err);
+            });
+        } else {
+            alert("⚠️ الرجاء السماح بالإشعارات لاستخدام هذه الميزة!");
+        }
+    });
+});
+
+messaging.onMessage((payload) => {
+    console.log("📩 رسالة جديدة:", payload);
+    new Notification(payload.notification.title, {
+        body: payload.notification.body,
+        icon: payload.notification.icon
+    });
+});
