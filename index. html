@@ -1,85 +1,70 @@
-<!DOCTYPE html><html lang="ar">
+<!DOCTYPE html>
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>تطبيقك مع إشعارات Firebase</title><!-- تحميل أحدث مكتبات Firebase -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-    import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-messaging.js";
-    
-    // تهيئة Firebase
-    const firebaseConfig = {
-        apiKey: "AIzaSyAJzK9G2MJieXHmeeHUBdULdDt8NwyxyKQ",
-        authDomain: "khedma-fd534.firebaseapp.com",
-        projectId: "khedma-fd534",
-        storageBucket: "khedma-fd534.appspot.com",
-        messagingSenderId: "186556101962",
-        appId: "1:186556101962:web:3edb278b50948378f83db3",
-        measurementId: "G-F6C0180ZDS"
-    };
-    
-    const app = initializeApp(firebaseConfig);
-    const messaging = getMessaging(app);
-    console.log("✅ Firebase تم الاتصال بها بنجاح");
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إشعارات Firebase</title>
 
-    document.getElementById("notifyBtn").addEventListener("click", () => {
-        Notification.requestPermission().then(permission => {
-            if (permission === "granted") {
-                getToken(messaging, { vapidKey: "YOUR_VAPID_KEY" }).then(token => {
-                    console.log("🔑 Token:", token);
-                    document.getElementById("status").innerText = "تم تفعيل الإشعارات!";
-                }).catch(err => {
-                    console.error("خطأ في الحصول على التوكن", err);
-                });
-            } else {
-                document.getElementById("status").innerText = "تم رفض الإشعارات!";
-            }
-        });
-    });
-
-    // استقبال الإشعارات أثناء عمل الموقع
-    onMessage(messaging, (payload) => {
-        console.log("📩 إشعار وارد: ", payload);
-        alert(`إشعار جديد: ${payload.notification.title}\n${payload.notification.body}`);
-    });
-</script>
-
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        background-color: #f8f9fa;
-        padding: 20px;
-    }
-    .container {
-        margin-top: 50px;
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-    }
-    button {
-        background: #007bff;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        font-size: 16px;
-        cursor: pointer;
-        border-radius: 5px;
-        transition: 0.3s;
-    }
-    button:hover {
-        background: #0056b3;
-    }
-</style>
+    <!-- تحميل مكتبة Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-messaging.js"></script>
 
 </head>
 <body>
-    <div class="container">
-        <h1>مرحبًا بك في تطبيقك</h1>
-        <p>اضغط على الزر لتفعيل الإشعارات</p>
-        <button id="notifyBtn">تفعيل الإشعارات</button>
-        <p id="status"></p>
-    </div>
+
+    <h1>مرحبًا، اختبر إشعارات فايربيس!</h1>
+    <button id="enableNotifications">🔔 تفعيل الإشعارات</button>
+
+    <script>
+        // ✅ إعداد Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAJzK9G2MJieXHmeeHUBdULdDt8NwyxyKQ",
+            authDomain: "khedma-fd534.firebaseapp.com",
+            projectId: "khedma-fd534",
+            storageBucket: "khedma-fd534.firebasestorage.app",
+            messagingSenderId: "186556101962",
+            appId: "1:186556101962:web:3edb278b50948378f83db3",
+            measurementId: "G-F6C0180ZDS"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const messaging = firebase.messaging();
+
+        // ✅ تسجيل Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                .then((registration) => {
+                    console.log('✅ Service Worker مسجل بنجاح:', registration);
+                    messaging.useServiceWorker(registration);
+                })
+                .catch((error) => {
+                    console.log('❌ فشل تسجيل Service Worker:', error);
+                });
+        }
+
+        // ✅ تفعيل الإشعارات
+        document.getElementById('enableNotifications').addEventListener('click', () => {
+            Notification.requestPermission().then((permission) => {
+                if (permission === 'granted') {
+                    console.log('🔔 تم تفعيل الإشعارات!');
+                    messaging.getToken().then((token) => {
+                        console.log('🔑 رمز المستخدم:', token);
+                    }).catch((error) => {
+                        console.log('❌ خطأ في جلب الرمز:', error);
+                    });
+                } else {
+                    console.log('🚫 تم رفض الإشعارات');
+                }
+            });
+        });
+
+        // ✅ استقبال الإشعارات عند تشغيل الموقع
+        messaging.onMessage((payload) => {
+            console.log('📩 إشعار مستلم:', payload);
+            alert(`📢 إشعار جديد: ${payload.notification.title}\n${payload.notification.body}`);
+        });
+
+    </script>
+
 </body>
 </html>
