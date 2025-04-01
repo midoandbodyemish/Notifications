@@ -1,76 +1,70 @@
-<!DOCTYPE html>
-<html lang="ar">
+<!DOCTYPE html><html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إشعارات Firebase</title>
-    <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-messaging.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-messaging.js";
+        import { getDatabase, ref, set, get, remove } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";const firebaseConfig = {
+        apiKey: "AIzaSyAJzK9G2MJieXHmeeHUBdULdDt8NwyxyKQ",
+        authDomain: "khedma-fd534.firebaseapp.com",
+        projectId: "khedma-fd534",
+        storageBucket: "khedma-fd534.firebasestorage.app",
+        messagingSenderId: "186556101962",
+        appId: "1:186556101962:web:de1945009a23d99cf83db3",
+        measurementId: "G-JNTZRQ2W4S"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const messaging = getMessaging(app);
+    const database = getDatabase(app);
+
+    function updateSubscribersCount() {
+        get(ref(database, "tokens")).then((snapshot) => {
+            const count = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
+            document.getElementById("subscribersCount").innerText = `عدد المشتركين: ${count}`;
+        });
+    }
+
+    document.getElementById("subscribeBtn").addEventListener("click", () => {
+        Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+                getToken(messaging, { vapidKey: "BIzL5Lxxxxxxxxxx" })
+                    .then((token) => {
+                        if (token) {
+                            set(ref(database, "tokens/" + token), { subscribed: true }).then(() => {
+                                console.log("✅ تم الاشتراك في الإشعارات.");
+                                updateSubscribersCount();
+                            });
+                        }
+                    })
+                    .catch((err) => console.log("❌ خطأ في الحصول على Token:", err));
+            }
+        });
+    });
+
+    document.getElementById("unsubscribeBtn").addEventListener("click", () => {
+        getToken(messaging).then((token) => {
+            remove(ref(database, "tokens/" + token)).then(() => {
+                console.log("🗑️ تم إلغاء الاشتراك.");
+                updateSubscribersCount();
+            });
+        });
+    });
+
+    onMessage(messaging, (payload) => {
+        console.log("📩 رسالة واردة: ", payload);
+        alert(payload.notification.title + "\n" + payload.notification.body);
+    });
+
+    updateSubscribersCount();
+</script>
+
 </head>
 <body>
-
-    <h1>إشعارات Firebase</h1>
-    <button id="subscribeBtn">✅ الاشتراك في الإشعارات</button>
-    <button id="unsubscribeBtn">❌ إلغاء الاشتراك</button>
-    <p>عدد المشتركين: <span id="subscriberCount">0</span></p>
-
-    <script>
-        // 1️⃣ - تهيئة Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyAJzK9G2MJieXHmeeHUBdULdDt8NwyxyKQ",
-            authDomain: "khedma-fd534.firebaseapp.com",
-            projectId: "khedma-fd534",
-            storageBucket: "khedma-fd534.firebasestorage.app",
-            messagingSenderId: "186556101962",
-            appId: "1:186556101962:web:de1945009a23d99cf83db3",
-            measurementId: "G-JNTZRQ2W4S"
-        };
-
-        // 2️⃣ - تهيئة التطبيق
-        firebase.initializeApp(firebaseConfig);
-        const messaging = firebase.messaging();
-        const db = firebase.firestore();
-
-        // 3️⃣ - تحديث عداد المشتركين
-        function updateSubscriberCount() {
-            db.collection("subscribers").get().then(snapshot => {
-                document.getElementById("subscriberCount").innerText = snapshot.size;
-            });
-        }
-        updateSubscriberCount();
-
-        // 4️⃣ - زر الاشتراك
-        document.getElementById("subscribeBtn").addEventListener("click", () => {
-            Notification.requestPermission().then(permission => {
-                if (permission === "granted") {
-                    messaging.getToken({ vapidKey: "YOUR_VAPID_KEY" }).then(token => {
-                        db.collection("subscribers").doc(token).set({ subscribed: true }).then(() => {
-                            alert("✅ تم الاشتراك في الإشعارات!");
-                            updateSubscriberCount();
-                        });
-                    });
-                }
-            });
-        });
-
-        // 5️⃣ - زر إلغاء الاشتراك
-        document.getElementById("unsubscribeBtn").addEventListener("click", () => {
-            messaging.getToken().then(token => {
-                db.collection("subscribers").doc(token).delete().then(() => {
-                    alert("❌ تم إلغاء الاشتراك!");
-                    updateSubscriberCount();
-                });
-            });
-        });
-
-        // 6️⃣ - تسجيل الـ Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/firebase-messaging-sw.js')
-                .then(registration => console.log('✅ Service Worker مسجل بنجاح:', registration))
-                .catch(error => console.log('❌ فشل تسجيل Service Worker:', error));
-        }
-    </script>
-
+    <h3 id="subscribersCount">عدد المشتركين: 0</h3>
+    <button id="subscribeBtn">🔔 اشتراك في الإشعارات</button>
+    <button id="unsubscribeBtn">🚫 إلغاء الاشتراك</button>
 </body>
 </html>
