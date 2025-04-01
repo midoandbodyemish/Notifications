@@ -5,12 +5,12 @@
     <title>إشعارات Firebase</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
-        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-messaging.js";
-        import { getDatabase, ref, set, get, remove } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";const firebaseConfig = {
+        import { getMessaging, getToken, onMessage, deleteToken } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-messaging.js";
+        import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";const firebaseConfig = {
         apiKey: "AIzaSyAJzK9G2MJieXHmeeHUBdULdDt8NwyxyKQ",
         authDomain: "khedma-fd534.firebaseapp.com",
         projectId: "khedma-fd534",
-        storageBucket: "khedma-fd534.firebasestorage.app",
+        storageBucket: "khedma-fd534.appspot.com",
         messagingSenderId: "186556101962",
         appId: "1:186556101962:web:de1945009a23d99cf83db3",
         measurementId: "G-JNTZRQ2W4S"
@@ -18,53 +18,66 @@
 
     const app = initializeApp(firebaseConfig);
     const messaging = getMessaging(app);
-    const database = getDatabase(app);
+    const db = getDatabase(app);
+    const subscribersRef = ref(db, 'subscribers');
 
-    function updateSubscribersCount() {
-        get(ref(database, "tokens")).then((snapshot) => {
-            const count = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
-            document.getElementById("subscribersCount").innerText = `عدد المشتركين: ${count}`;
-        });
+    async function updateSubscriberCount(change) {
+        const snapshot = await get(subscribersRef);
+        let count = snapshot.exists() ? snapshot.val() : 0;
+        count = Math.max(0, count + change);
+        await set(subscribersRef, count);
+        document.getElementById('subscriberCount').innerText = count;
     }
 
-    document.getElementById("subscribeBtn").addEventListener("click", () => {
-        Notification.requestPermission().then((permission) => {
+    async function subscribe() {
+        try {
+            const permission = await Notification.requestPermission();
             if (permission === "granted") {
-                getToken(messaging, { vapidKey: "BIzL5Lxxxxxxxxxx" })
-                    .then((token) => {
-                        if (token) {
-                            set(ref(database, "tokens/" + token), { subscribed: true }).then(() => {
-                                console.log("✅ تم الاشتراك في الإشعارات.");
-                                updateSubscribersCount();
-                            });
-                        }
-                    })
-                    .catch((err) => console.log("❌ خطأ في الحصول على Token:", err));
+                const token = await getToken(messaging, { vapidKey: "YOUR_PUBLIC_VAPID_KEY" });
+                if (token) {
+                    console.log("تم الاشتراك بنجاح:", token);
+                    await updateSubscriberCount(1);
+                } else {
+                    console.log("فشل الحصول على التوكن.");
+                }
             }
-        });
-    });
+        } catch (error) {
+            console.error("خطأ في الاشتراك:", error);
+        }
+    }
 
-    document.getElementById("unsubscribeBtn").addEventListener("click", () => {
-        getToken(messaging).then((token) => {
-            remove(ref(database, "tokens/" + token)).then(() => {
-                console.log("🗑️ تم إلغاء الاشتراك.");
-                updateSubscribersCount();
-            });
-        });
-    });
+    async function unsubscribe() {
+        try {
+            const token = await getToken(messaging);
+            if (token) {
+                await deleteToken(messaging);
+                console.log("تم إلغاء الاشتراك بنجاح");
+                await updateSubscriberCount(-1);
+            }
+        } catch (error) {
+            console.error("خطأ في إلغاء الاشتراك:", error);
+        }
+    }
 
     onMessage(messaging, (payload) => {
-        console.log("📩 رسالة واردة: ", payload);
-        alert(payload.notification.title + "\n" + payload.notification.body);
+        console.log("إشعار مستلم:", payload);
+        new Notification(payload.notification.title, {
+            body: payload.notification.body,
+            icon: payload.notification.icon
+        });
     });
 
-    updateSubscribersCount();
+    window.onload = async () => {
+        const snapshot = await get(subscribersRef);
+        document.getElementById('subscriberCount').innerText = snapshot.exists() ? snapshot.val() : 0;
+    };
 </script>
 
 </head>
 <body>
-    <h3 id="subscribersCount">عدد المشتركين: 0</h3>
-    <button id="subscribeBtn">🔔 اشتراك في الإشعارات</button>
-    <button id="unsubscribeBtn">🚫 إلغاء الاشتراك</button>
+    <h1>إشعارات Firebase</h1>
+    <button onclick="subscribe()">الاشتراك في الإشعارات</button>
+    <button onclick="unsubscribe()">إلغاء الاشتراك</button>
+    <p>عدد المشتركين: <span id="subscriberCount">0</span></p>
 </body>
 </html>
