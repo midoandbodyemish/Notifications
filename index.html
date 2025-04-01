@@ -1,83 +1,107 @@
-<!DOCTYPE html><html lang="ar">
+
+<!DOCTYPE html>
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إشعارات Firebase</title>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
-        import { getMessaging, getToken, onMessage, deleteToken } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-messaging.js";
-        import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";const firebaseConfig = {
-        apiKey: "AIzaSyAJzK9G2MJieXHmeeHUBdULdDt8NwyxyKQ",
-        authDomain: "khedma-fd534.firebaseapp.com",
-        projectId: "khedma-fd534",
-        storageBucket: "khedma-fd534.appspot.com",
-        messagingSenderId: "186556101962",
-        appId: "1:186556101962:web:de1945009a23d99cf83db3",
-        measurementId: "G-JNTZRQ2W4S"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const messaging = getMessaging(app);
-    const db = getDatabase(app);
-    const subscribersRef = ref(db, 'subscribers');
-
-    async function updateSubscriberCount(change) {
-        const snapshot = await get(subscribersRef);
-        let count = snapshot.exists() ? snapshot.val() : 0;
-        count = Math.max(0, count + change);
-        await set(subscribersRef, count);
-        document.getElementById('subscriberCount').innerText = count;
-    }
-
-    async function subscribe() {
-        try {
-            const permission = await Notification.requestPermission();
-            if (permission === "granted") {
-                const token = await getToken(messaging, { vapidKey: "YOUR_PUBLIC_VAPID_KEY" });
-                if (token) {
-                    console.log("تم الاشتراك بنجاح:", token);
-                    await updateSubscriberCount(1);
-                } else {
-                    console.log("فشل الحصول على التوكن.");
-                }
-            }
-        } catch (error) {
-            console.error("خطأ في الاشتراك:", error);
-        }
-    }
-
-    async function unsubscribe() {
-        try {
-            const token = await getToken(messaging);
-            if (token) {
-                await deleteToken(messaging);
-                console.log("تم إلغاء الاشتراك بنجاح");
-                await updateSubscriberCount(-1);
-            }
-        } catch (error) {
-            console.error("خطأ في إلغاء الاشتراك:", error);
-        }
-    }
-
-    onMessage(messaging, (payload) => {
-        console.log("إشعار مستلم:", payload);
-        new Notification(payload.notification.title, {
-            body: payload.notification.body,
-            icon: payload.notification.icon
-        });
-    });
-
-    window.onload = async () => {
-        const snapshot = await get(subscribersRef);
-        document.getElementById('subscriberCount').innerText = snapshot.exists() ? snapshot.val() : 0;
-    };
-</script>
-
+    <title>نظام الاشتراك والإشعارات</title>
+    <script type="module" defer src="script.js"></script>
 </head>
 <body>
-    <h1>إشعارات Firebase</h1>
-    <button onclick="subscribe()">الاشتراك في الإشعارات</button>
-    <button onclick="unsubscribe()">إلغاء الاشتراك</button>
-    <p>عدد المشتركين: <span id="subscriberCount">0</span></p>
+    <h1>اشترك لتصلك الإشعارات</h1>
+    <button id="subscribe">اشتراك</button>
+    <button id="unsubscribe" disabled>إلغاء الاشتراك</button>
+    <p id="status">لم تشترك بعد.</p>
 </body>
 </html>
+
+📄 script.js
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyAJzK9G2MJieXHmeeHUBdULdDt8NwyxyKQ",
+    authDomain: "khedma-fd534.firebaseapp.com",
+    databaseURL: "https://khedma-fd534-default-rtdb.firebaseio.com",
+    projectId: "khedma-fd534",
+    storageBucket: "khedma-fd534.firebasestorage.app",
+    messagingSenderId: "186556101962",
+    appId: "1:186556101962:web:de1945009a23d99cf83db3",
+    measurementId: "G-JNTZRQ2W4S"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const messaging = getMessaging(app);
+
+const subscribeBtn = document.getElementById("subscribe");
+const unsubscribeBtn = document.getElementById("unsubscribe");
+const statusText = document.getElementById("status");
+
+subscribeBtn.addEventListener("click", async () => {
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+            alert("يجب السماح بالإشعارات!");
+            return;
+        }
+        const token = await getToken(messaging, { vapidKey: "YOUR_VAPID_KEY_HERE" });
+        if (token) {
+            await set(ref(db, `subscribers/${token}`), { token });
+            statusText.textContent = "تم الاشتراك!";
+            subscribeBtn.disabled = true;
+            unsubscribeBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error("خطأ في الاشتراك:", error);
+    }
+});
+
+unsubscribeBtn.addEventListener("click", async () => {
+    try {
+        const token = await getToken(messaging);
+        if (token) {
+            await remove(ref(db, `subscribers/${token}`));
+            statusText.textContent = "تم إلغاء الاشتراك!";
+            subscribeBtn.disabled = false;
+            unsubscribeBtn.disabled = true;
+        }
+    } catch (error) {
+        console.error("خطأ في إلغاء الاشتراك:", error);
+    }
+});
+
+onMessage(messaging, (payload) => {
+    console.log("إشعار مستلم:", payload);
+    alert(`إشعار جديد: ${payload.notification.title} - ${payload.notification.body}`);
+});
+
+📄 firebase-messaging-sw.js
+
+importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
+importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js");
+
+firebase.initializeApp({
+    apiKey: "AIzaSyAJzK9G2MJieXHmeeHUBdULdDt8NwyxyKQ",
+    authDomain: "khedma-fd534.firebaseapp.com",
+    databaseURL: "https://khedma-fd534-default-rtdb.firebaseio.com",
+    projectId: "khedma-fd534",
+    storageBucket: "khedma-fd534.firebasestorage.app",
+    messagingSenderId: "186556101962",
+    appId: "1:186556101962:web:de1945009a23d99cf83db3",
+    measurementId: "G-JNTZRQ2W4S"
+});
+
+const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage((payload) => {
+    console.log("إشعار في الخلفية:", payload);
+    self.registration.showNotification(payload.notification.title, {
+        body: payload.notification.body,
+        icon: "/logo.png",
+        click_action: "https://your-website.com"
+    });
+});
+
